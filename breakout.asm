@@ -55,7 +55,7 @@ start:
     cld
     mov ax, data
     mov ds, ax
-
+    mov word [current_level], level0
     mode13h
 
 
@@ -270,6 +270,9 @@ ballVel.X:  dw 2
 ballVel.Y:  dw -3
 
             dw 0
+
+current_level:
+    dw  0
 
 score:
     dw 0
