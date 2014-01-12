@@ -49,11 +49,13 @@ start:
 
     mode13h
 
+
 .loop:
     call swapBuffers
     call clearBuffer
 
     call drawBorder
+    ccall drawBlocks, word[level0], word[level0+2], level0+4
     ccall drawMaskBin,5, paddleBin, word[paddleCoords.X], word[paddleCoords.Y]
     ccall drawMaskBin,5, ballBin,   word[ballCoords.X], word[ballCoords.Y]
     ccall wordToDec, buf, word[score]
@@ -62,6 +64,41 @@ start:
     call handleKeys
     jmp .loop
     ret
+
+drawBlocks:
+    %stacksize large
+    %arg startRow:word, height:word, level:word
+    enter 0,0
+    mov dx, [startRow]
+    shl dx, 3           ; * 8
+    mov si, [level]
+    mov cx, [height]
+.y_loop:
+    mov bx, MARGIN_X
+.x_loop:
+    
+    push dx
+    push si
+    push cx
+    push bx
+    ccall drawMaskBin, 5, brick, bx, dx
+    pop bx
+    pop cx
+    pop si
+    pop dx
+
+    inc si
+    add bx, 16
+    cmp bx, BALL_X_MAX
+    jl .x_loop
+    add dx, 8
+    dec cx
+    cmp cx, 0
+    jg .y_loop
+.done:
+    leave
+    ret
+   
 
 drawBorder:
     xor ax,ax
@@ -256,14 +293,34 @@ paddleBin:
 
 borderVert:
     db 1, 8
-    db 11111111b
+    db 11000011b
     db 11111111b
     db 01111110b
     db 01111110b
     db 01111110b
     db 01111110b
     db 11111111b
-    db 11111111b
+    db 11000011b
+
+brick:
+    db 2, 8
+    db 00000000b,00000000b
+    db 01111111b,11111111b
+    db 01111111b,11111111b
+    db 01111111b,11111111b
+    db 01111111b,11111011b
+    db 01111111b,11110011b
+    db 01111111b,11000011b
+    db 01111111b,11111111b
+    db 00000000b,00000000b
+
+; 
+level0:
+    dw 2, 4
+    db 1,1,1,1,1,1,1,1,1,1
+    db 1,1,1,1,1,1,1,1,1,1
+    db 1,1,1,1,1,1,1,1,1,1
+    db 1,1,1,1,1,1,1,1,1,1
 
 
 section .stack stack
