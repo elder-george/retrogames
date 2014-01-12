@@ -152,11 +152,11 @@ handleKeys:
 .isLeft:
     cmp al, KEY_LEFT
     jne .isRight
-    sub word [paddleCoords.X], 2
+    sub word [paddleCoords.X], 4
 .isRight:
     cmp al, KEY_RIGHT
     jne .clampLeft
-    add word [paddleCoords.X], 2
+    add word [paddleCoords.X], 4
 .clampLeft:
     cmp word [paddleCoords.X], PADDLE_X_MIN
     jge .clampRight
