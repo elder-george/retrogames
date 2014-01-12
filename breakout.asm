@@ -136,11 +136,10 @@ moveBall:
     jmp .save_ball_Y
 .check_ball_bottom:
     cmp dx, BALL_Y_BOTTOM
-    jge .save_ball_Y
+    jle .save_ball_Y
     xor ax,ax
     mov [ballVel.Y], ax
     mov [ballVel.X], ax
-    ret
 .save_ball_Y:
     mov [ballCoords.Y], dx
     ret
