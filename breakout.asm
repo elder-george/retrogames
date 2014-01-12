@@ -64,7 +64,9 @@ start:
     call clearBuffer
 
     call drawBorder
-    ccall drawBlocks, word[level0], word[level0+2], level0+4
+    mov bx, [current_level]
+    add bx, 4
+    ccall drawBlocks, word[bx-4], word[bx-2], bx
     ccall drawMaskBin,5, paddleBin, word[paddleCoords.X], word[paddleCoords.Y]
     ccall drawMaskBin,5, ballBin,   word[ballCoords.X], word[ballCoords.Y]
     ccall wordToDec, score_buf, word[score]
@@ -79,13 +81,16 @@ drawBlocks:
     %arg startRow:word, height:word, level:word
     enter 0,0
     mov dx, [startRow]
+    inc dx              ; skip top border
     shl dx, 3           ; * 8
     mov si, [level]
     mov cx, [height]
 .y_loop:
     mov bx, MARGIN_X
 .x_loop:
-    
+    lodsb
+    cmp al, 0
+    jle .update_vars   
     push dx
     push si
     push cx
@@ -95,8 +100,7 @@ drawBlocks:
     pop cx
     pop si
     pop dx
-
-    inc si
+.update_vars:
     add bx, 16
     cmp bx, BALL_X_MAX
     jl .x_loop
@@ -135,7 +139,6 @@ drawBorder:
 
 moveBall:
 .change_ball_X:
-;    xor ax,ax 
     mov ax,[ballVel.X]
     mov dx, [ballCoords.X]
     add dx, ax
@@ -155,7 +158,6 @@ moveBall:
     mov [ballCoords.X], dx
 
 .update_ball_Y:
-;    xor ax, ax
     mov ax,[ballVel.Y]
     mov dx, [ballCoords.Y]
     add dx, ax
@@ -168,7 +170,7 @@ moveBall:
     jmp .save_ball_Y
 .check_ball_paddle:
     cmp dx, BALL_Y_PADDLE
-    jl .save_ball_Y
+    jl .check_block_collisions
     mov bx, [ballCoords.X]
     sub bx, [paddleCoords.X]
     cmp bx, -8
@@ -182,10 +184,48 @@ moveBall:
     jmp .save_ball_Y
 .check_ball_bottom:
     cmp dx, BALL_Y_BOTTOM
-    jle .save_ball_Y
+    jle .check_block_collisions
     xor ax,ax
     mov [ballVel.Y], ax
     mov [ballVel.X], ax
+    jmp .save_ball_Y
+.check_block_collisions:
+    push dx
+    push ax
+    mov ax, dx
+    shr ax, 3
+    mov bx, [current_level]
+    mov dx, [bx]
+    inc dx          ; skip border
+    cmp al, dl      ; start row
+    jl .collisions_handled
+    sub ax, dx
+    mov dx, [bx+2]  ; add number of rows
+    cmp al, dl
+    jge .collisions_handled
+.potential_collision:
+    add bx, 4
+    mov si, bx
+    mov dl, (SCREENW - 2*MARGIN_X)/16
+    mul dl
+    add si, ax      ; si = row
+    mov ax, [ballCoords.X]
+    sub ax, MARGIN_X
+    shr ax, 4
+    xor ah, ah
+    add si, ax      ; si points to brick
+    mov al, [si]
+    cmp al, 0
+    jle .collisions_handled
+    dec al
+    mov [si], al
+    pop ax
+    neg ax
+    push ax
+    mov [ballVel.Y], ax
+.collisions_handled:
+    pop ax
+    pop dx
 .save_ball_Y:
     mov [ballCoords.Y], dx
     ret
