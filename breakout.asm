@@ -67,8 +67,8 @@ start:
     ccall drawBlocks, word[level0], word[level0+2], level0+4
     ccall drawMaskBin,5, paddleBin, word[paddleCoords.X], word[paddleCoords.Y]
     ccall drawMaskBin,5, ballBin,   word[ballCoords.X], word[ballCoords.Y]
-    ccall wordToDec, buf, word[score]
-    ccall drawDigitString, 5, buf, 16, 16
+    ccall wordToDec, score_buf, word[score]
+    ccall drawDigitString, 5, score_buf, 16, 16
     call moveBall
     call handleKeys
     jmp .loop
@@ -277,7 +277,7 @@ current_level:
 score:
     dw 0
 
-buf:
+score_buf:
     db '0','0','0',00,0,0,0,0,0,0
 
 %include 'sprites.inc'
