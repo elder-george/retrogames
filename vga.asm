@@ -15,28 +15,28 @@ section .code
 fillRect:
     %stacksize large
     %arg COLOR:word, X:word, Y:word, W:word, H:word
-    push bp
-    mov bp, sp
-    ;mov ax, VMEM
-    ;mov es, ax
+    ;push bp
+    ;mov bp, sp
+    enter 0,0
     coord [X], [Y]
     mov bx, ax
     mov dx, [H]
-fillRect_line:
+.line:
     mov di, ax
     mov cx, [W]
     mov al, [COLOR]
     rep stosb
     dec dx
     test dx, dx
-    jz fillRect_end
+    jz .end
     mov ax, bx
     add ax, SCREENW
     mov bx, ax
-    jmp fillRect_line
-fillRect_end:
-    mov sp, bp
-    pop bp
+    jmp .line
+.end:
+    ;mov sp, bp
+    ;pop bp
+    leave
     ret
 
 drawMask:
@@ -45,8 +45,6 @@ drawMask:
 
     push bp
     mov bp, sp
-    ;mov ax, VMEM
-    ;mov es, ax
     coord [X], [Y]
     push ax             ;
     mov si, [pmask]
@@ -61,10 +59,7 @@ drawMask:
     test al, al
     jz .skip_point
     mov al, [COLOR]
-    ;stosb
     mov [es:di], al
-    ;inc di
-    ;jmp .dec_x
 .skip_point:
     inc di
 .dec_x:            
