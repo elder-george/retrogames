@@ -138,6 +138,11 @@ drawBorder:
     ret
 
 moveBall:
+    %push moveBall_ctx
+    %stacksize small
+    %assign %$localsize 0
+    %local newX:word, newY:word, row:word, column:word
+    enter %$localsize,0
 .change_ball_X:
     mov ax,[ballVel.X]
     mov dx, [ballCoords.X]
@@ -155,12 +160,13 @@ moveBall:
     neg ax
     mov [ballVel.X], ax
 .save_ball_X:
-    mov [ballCoords.X], dx
+    mov [newX], dx
 
 .update_ball_Y:
     mov ax,[ballVel.Y]
     mov dx, [ballCoords.Y]
-    add dx, ax
+    add dx, ax    ; dx = newY
+    mov [newY], dx
 .check_ball_top:
     cmp dx, BALL_Y_MIN
     jge .check_ball_paddle
@@ -179,46 +185,74 @@ moveBall:
     jge .check_ball_bottom
 .hit_paddle:
     mov dx, BALL_Y_PADDLE
+    cmp ax, 0               ; if we do simple `neg` ball may stuck on paddle.
+    jl .save_ball_vel_Y     ; so, let's make sure the ball moves up after bouncing.
     neg ax
+.save_ball_vel_Y:
     mov [ballVel.Y], ax
     jmp .save_ball_Y
 .check_ball_bottom:
     cmp dx, BALL_Y_BOTTOM
-    jle .check_block_collisions
+    jle .save_ball_Y
     xor ax,ax
     mov [ballVel.Y], ax
     mov [ballVel.X], ax
     jmp .save_ball_Y
 .check_block_collisions:
+    mov [newY], dx
     push dx
     push ax
+    mov ax, [ballVel.Y]
+    cmp ax, 0
+    jle .compute_row    ; if ball moves down,
+    add dx, 8           ; then check lower bound
+.compute_row:
+    shr dx, 3
     mov ax, dx
-    shr ax, 3
+    mov [row], ax
     mov bx, [current_level]
-    mov dx, [bx]
+    mov dx, [bx]    ; read start row
     inc dx          ; skip border
     cmp al, dl      ; start row
     jl .collisions_handled
     sub ax, dx
     mov dx, [bx+2]  ; add number of rows
-    cmp al, dl
-    jge .collisions_handled
+    cmp al, dl      ; is below the lowest row?
+    jge .collisions_handled ; if yes, skip
 .potential_collision:
     add bx, 4
-    mov si, bx
+    mov si, bx  ; si = start of level
     mov dl, (SCREENW - 2*MARGIN_X)/16
     mul dl
     add si, ax      ; si = row
     mov ax, [ballCoords.X]
+    mov dx, [ballVel.X]
+    cmp dx, 0
+    jle .compute_column
+    add ax, 8
+.compute_column:
     sub ax, MARGIN_X
-    shr ax, 4
-    xor ah, ah
+    shr ax, 4       ; / 16
+    mov [column], ax
     add si, ax      ; si points to brick
     mov al, [si]
     cmp al, 0
     jle .collisions_handled
     dec al
     mov [si], al
+.decide_what_side_collided:
+    mov ax, [newY]
+    add ax, 4       ; center of ball
+    shr ax, 3       ; div 8
+    cmp ax, [row]
+    jg .change_vel_y
+.change_vel_x:
+    mov ax, [ballVel.X]
+    neg ax
+    push ax
+    mov [ballVel.X], ax
+    jmp .collisions_handled
+.change_vel_y:
     pop ax
     neg ax
     push ax
@@ -227,8 +261,14 @@ moveBall:
     pop ax
     pop dx
 .save_ball_Y:
+.apply_changes:
+    mov dx, [newX]
+    mov [ballCoords.X], dx
+    mov dx, [newY]
     mov [ballCoords.Y], dx
+    leave
     ret
+    %pop
 
 handleKeys:
     call checkKey
