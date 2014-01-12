@@ -15,8 +15,6 @@ section .code
 fillRect:
     %stacksize large
     %arg COLOR:word, X:word, Y:word, W:word, H:word
-    ;push bp
-    ;mov bp, sp
     enter 0,0
     coord [X], [Y]
     mov bx, ax
@@ -34,8 +32,6 @@ fillRect:
     mov bx, ax
     jmp .line
 .end:
-    ;mov sp, bp
-    ;pop bp
     leave
     ret
 
@@ -115,8 +111,6 @@ drawChar:
     %arg COLOR:word, pchar:word, X:word, Y:word
     push bp
     mov bp, sp
-    ;mov ax, VMEM
-    ;mov es, ax
     mov dh, 8
     mov dl, 1
     mov si, [pchar]
@@ -128,8 +122,6 @@ drawMaskBin:
 
     push bp
     mov bp, sp
-    ;mov ax, VMEM
-    ;mov es, ax
     mov si, [pmask]
     mov dx, [si]        ; W, H
     add si, 2           ; si = mask_data
@@ -139,16 +131,14 @@ drawMaskBin:
 .drawMask_line:
     mov ch, dl          ; byte number in a row
     mov di, ax
+    mov ah, [COLOR]
 .next_byte:
     mov cl, 8           ; bit number in a byte
     lodsb               
 .next_point:
     shl al, 1           ; shift a bit out of byte
     jnc .skip_point     ; if it's 0, skip the point
-    push ax             ; if it's 1, let's draw a point
-    mov al, [COLOR]
-    mov [es:di], al
-    pop ax
+    mov [es:di], ah
 .skip_point:
     inc di
 .dec_x:
