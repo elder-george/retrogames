@@ -322,8 +322,6 @@ score_buf:
 
 %include 'sprites.inc'
 
-    dd 0deadbeefh
-
 level0:
     dw 2, 4
     db 1,1,1,1,1,1,1,1,1,1
