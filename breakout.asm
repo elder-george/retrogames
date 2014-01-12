@@ -41,6 +41,15 @@ BALL_Y_MIN  EQU MARGIN_TOP
 BALL_Y_PADDLE   EQU SCREENH-MARGIN_BTM-16
 BALL_Y_BOTTOM   EQU SCREENH-MARGIN_BTM-8
 
+%macro dbg_num 1
+;    ccall fillRect, 0, 16, 16, 100, 16
+    ccall wordToDec, score_buf, %1
+    ccall drawDigitString, 5, score_buf, 16, 32
+    call swapBuffers
+    xor dx, dx
+    div dx
+%endm
+
 section .code
 start:
     cld
