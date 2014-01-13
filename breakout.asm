@@ -10,6 +10,9 @@ extern drawDigitString
 extern swapBuffers
 extern clearBuffer
 
+; in kb.asm
+extern checkKey
+extern getKey
 
 ; in font.asm
 extern digits
@@ -379,15 +382,6 @@ wordToDec:
     xchg ax,dx
     dec di
     jnz .loop
-    ret
-
-checkKey:
-    mov ah, 1
-    int 16h
-    ret
-
-getKey:
-    in al, 60h   
     ret
 
 section data data
