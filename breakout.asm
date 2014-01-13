@@ -57,7 +57,9 @@ start:
     mov ds, ax
     call load_level
     mode13h
-
+    call .loop
+    mov ax, 4c00h
+    int 21h
 
 .loop:
     call swapBuffers
@@ -80,6 +82,8 @@ start:
     ccall drawMaskBin,5, ballBin,   word[ballCoords.X], word[ballCoords.Y]
     call moveBall
     call handleKeys
+    test al, al
+    jz .quit
     jmp .loop
 .next_level:
     inc byte[level_no]
@@ -321,6 +325,11 @@ handleKeys:
     call checkKey
     jz .done
     call getKey
+.isEsc:
+    cmp al, KEY_ESC
+    jne .isLeft
+    xor al,al
+    jmp .done
 .isLeft:
     cmp al, KEY_LEFT
     jne .isRight
