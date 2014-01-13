@@ -55,7 +55,7 @@ start:
     cld
     mov ax, data
     mov ds, ax
-    mov word [current_level], level0
+    call load_level
     mode13h
 
 
@@ -64,17 +64,58 @@ start:
     call clearBuffer
 
     call drawBorder
+    ccall wordToDec, score_buf, word[score]
+    ccall drawDigitString, 5, score_buf, 16, 16
     mov bx, [current_level]
     add bx, 4
     ccall drawBlocks, word[bx-4], word[bx-2], bx
+    mov al, [lost]
+    test al, al
+    jnz .loop        ; do not draw 
+    mov al, [level_brick_count]
+    cmp al, 0
+    jle .next_level
+    xor ah, ah
     ccall drawMaskBin,5, paddleBin, word[paddleCoords.X], word[paddleCoords.Y]
     ccall drawMaskBin,5, ballBin,   word[ballCoords.X], word[ballCoords.Y]
-    ccall wordToDec, score_buf, word[score]
-    ccall drawDigitString, 5, score_buf, 16, 16
     call moveBall
     call handleKeys
     jmp .loop
+.next_level:
+    inc byte[level_no]
+    call load_level
+    jmp .loop
+.quit:
     ret
+
+load_level:
+    mov si, levels
+    xor ax,ax
+    mov al, byte[level_no]
+    add si, ax
+    mov bx, [si]
+    mov [current_level], bx
+    mov ax, [bx+2]
+    xchg al, ah
+    aad
+    ;mov dl, 10
+    ;mul dl
+    mov cx, ax      ; count of cells (empty and bricks)
+    add bx, 4
+    mov si, bx
+    xor dl, dl
+.loop:
+    lodsb
+    test al,al
+    jz .next_cell
+    inc dl
+    ;jmp .loop
+.next_cell:
+    dec cx
+    jnz .loop
+    mov [level_brick_count], dl
+    ret
+
 
 drawBlocks:
     %stacksize large
@@ -197,6 +238,8 @@ moveBall:
     xor ax,ax
     mov [ballVel.Y], ax
     mov [ballVel.X], ax
+    inc ax
+    mov [lost], ax
     jmp .save_ball_Y
 .check_block_collisions:
     mov [newY], dx
@@ -240,6 +283,10 @@ moveBall:
     jle .collisions_handled
     dec al
     mov [si], al
+    test al, al
+    jne .decide_what_side_collided
+    inc word[score]
+    dec byte[level_brick_count]
 .decide_what_side_collided:
     mov ax, [newY]
     add ax, 4       ; center of ball
@@ -343,16 +390,16 @@ ballCoords:
 ballCoords.X:   dw 116
 ballCoords.Y:   dw 200-16
 
-            dw 0
-
 ballVel:
 ballVel.X:  dw 2
 ballVel.Y:  dw -3
 
-            dw 0
-
 current_level:
     dw  0
+level_brick_count:
+    db 0                ;we have 160x192 field with 16x8 bricks; that gives 240 bricks max.
+lost:           db 0
+level_no:       db 0
 
 score:
     dw 0
@@ -362,12 +409,25 @@ score_buf:
 
 %include 'sprites.inc'
 
+levels:
+    dw level0, level1
+
 level0:
     dw 2, 4
     db 1,1,1,1,1,1,1,1,1,1
     db 1,1,1,1,1,1,1,1,1,1
     db 1,1,1,1,1,1,1,1,1,1
     db 1,1,1,1,1,1,1,1,1,1
+
+level1:
+    dw 0, 7
+    db 1,0,0,0,0,0,0,0,0,0
+    db 1,1,0,0,0,0,0,0,0,0
+    db 1,1,1,0,0,0,0,0,0,0
+    db 1,1,1,1,0,0,0,0,0,0
+    db 1,1,1,1,1,0,0,0,0,0
+    db 1,1,1,1,1,1,0,0,0,0
+    db 1,1,1,1,1,1,1,0,0,0
 
 
 section .stack stack
