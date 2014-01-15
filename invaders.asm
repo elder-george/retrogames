@@ -82,7 +82,8 @@ update:
 .next_missile:
     inc si
     inc si
-    ; todo: removed missiles out of screen      
+    test cl, cl
+    jz .cool_down
     jmp .move_missiles_loop
 .cool_down:
     mov [shipMissilesCount], ch
@@ -118,11 +119,10 @@ render:
     ret
 
 handleKeys:
+    mov dx, [shipPos]
     call checkKey
     jz .done
     call getKey
-    mov dl, [shipPos.X]
-    mov dh, [shipPos.Y]
 .isEsc:
     cmp al, KEY_ESC
     jne .isSpace
@@ -165,7 +165,7 @@ handleKeys:
     jmp .clampLeft
 .isRight:
     cmp al, KEY_RIGHT
-    jne .done
+    jne .clampLeft
     add dl, 4
     jmp .clampRight
 .clampLeft:
@@ -178,14 +178,16 @@ handleKeys:
     jbe .done
     mov dl, SHIP_X_MAX
 .done:
-    mov [shipPos.X], dl
+    mov [shipPos], dl
     ret
 
 
 section .data
+
 shipPos:
-shipPos.X: db SCREENW / 2
+shipPos.X: db SCREENW / 2 + 10
 shipPos.Y: db SCREENH-SHIP_H
+
 
 shipMissileCooldown: db 0
 shipMissilesCount: db 0
