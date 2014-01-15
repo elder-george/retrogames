@@ -136,7 +136,7 @@ drawMaskBin:
     mov cl, 8           ; bit number in a byte
     lodsb               
 .next_point:
-    shl al, 1           ; shift a bit out of byte
+    shr al, 1           ; shift a bit out of byte
     jnc .skip_point     ; if it's 0, skip the point
     mov [es:di], ah
 .skip_point:
@@ -153,6 +153,11 @@ drawMaskBin:
     test dh, dh         ; is last row?
     jz .drawMask_end    ; if yes, end
     pop ax              ; restore the old pointer
+    cmp ax, SCREENW * (SCREENH-1)
+    jnae .inc_ptr
+    push ax
+    jmp .drawMask_end
+.inc_ptr:
     add ax, SCREENW     ; advance to the next line
     push ax             ; save for next iteration
     jmp .drawMask_line
