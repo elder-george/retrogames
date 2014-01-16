@@ -19,6 +19,7 @@ extern digits
 ; in inv_sprites.asm
 extern shipSprite
 extern missileSprite
+extern monster1Sprite
 
 %include 'common.inc'
 
@@ -33,12 +34,22 @@ SHIP_MISSILE_VEL        EQU 2
 SHIP_MISSILE_COOLDOWN   EQU 2
 UFO_MISSILE_MAX         EQU 5
 
+MONSTER_MAX             EQU 20
+
 section .code
 start:
     cld
     mov ax, data
     mov ds, ax
     mode13h
+    mov al, 100
+    mov ah, 160
+    mov [monsterPos], ax
+    mov al, 120
+    mov ah, 160
+    mov [monsterPos+2], ax
+    inc byte[monsterCount]
+    inc byte[monsterCount]
 
 .loop:
     call swapBuffers
@@ -57,6 +68,10 @@ start:
     int 21h
 
 update:
+    call update_missiles
+    ret
+
+update_missiles:
     mov cl,[shipMissilesCount]
     mov ch, cl
     mov si,shipMissilesPos
@@ -74,6 +89,7 @@ update:
     xor ax, ax
     mov [si], ax
     dec ch
+    dec cl
     jmp .next_missile
 .move_missile:
     sub ah, SHIP_MISSILE_VEL
@@ -82,8 +98,6 @@ update:
 .next_missile:
     inc si
     inc si
-    test cl, cl
-    jz .cool_down
     jmp .move_missiles_loop
 .cool_down:
     mov [shipMissilesCount], ch
@@ -101,25 +115,40 @@ render:
     xor ah,ah
     xor bh, bh
     ccall drawMaskBin, 10, shipSprite, ax, bx
-    mov cl,[shipMissilesCount]
-    mov si,shipMissilesPos
-.render_missiles_loop:
+    ccall render_sprites, word[shipMissilesCount], shipMissilesPos, missileSprite
+    ccall render_sprites, word[monsterCount], monsterPos, monster1Sprite
+.done:
+    ret
+
+render_sprites:
+    %stacksize large
+    %arg count:byte, positions:word, sprite:word
+    enter 0,0
+    mov cl, [count]
+    mov si, [positions]
+.render_loop:
     cmp cl, 0
     jle .done
     lodsw
     test ax, ax
-    jz .render_missiles_loop    ; skip
+    jz .render_loop    ; skip
     mov bl, ah
     xor ah, ah
     mov bh, ah
-    ccall drawMaskBin, 10, missileSprite, ax, bx
-    dec cl    
-    jmp .render_missiles_loop
+    dec cl
+    push cx
+    push si    
+    ccall drawMaskBin, 50, word[sprite], ax, bx
+    pop si
+    pop cx
+    jmp .render_loop
 .done:
+    leave
     ret
 
 handleKeys:
     mov dx, [shipPos]
+.readKey:
     call checkKey
     jz .done
     call getKey
@@ -135,26 +164,28 @@ handleKeys:
     test ah,ah
     jnz .done
     mov ch, [shipMissilesCount]
-    mov cl, cl
-    cmp cl, SHIP_MISSILE_MAX
+    mov cl, SHIP_MISSILE_MAX
+    cmp ch, cl    
     jae .done
     mov ah, SHIP_MISSILE_COOLDOWN
     mov [shipMissileCooldown], ah
-    ;mov ax, dx
-    ;add al, SHIP_W/2
     mov si, shipMissilesPos
 .find_free_missile_slot_loop:
+    cmp cl, 0
+    jle .done
     lodsw
     test ax, ax
     jz .make_missile
     dec cl
-    jnz .find_free_missile_slot_loop
+    jmp .find_free_missile_slot_loop
 .make_missile:
-    mov ax, dx
-    add al, SHIP_W/2
+    mov ax, dx          ; ship (X,Y)
+    add al, SHIP_W/2-4  ; missile should go from ship middle)
+    dec si              ; moving SI back to the empty slot
     dec si
-    dec si
-    mov [si], ax
+    mov [si], ax        ; storing missile info
+    inc si
+    inc si
     inc ch
     mov [shipMissilesCount], ch
     jmp .done
@@ -188,12 +219,13 @@ shipPos:
 shipPos.X: db SCREENW / 2 + 10
 shipPos.Y: db SCREENH-SHIP_H
 
-
 shipMissileCooldown: db 0
 shipMissilesCount: db 0
-shipMissilesPos:
-    dw 0,0,0,0,0,0,0,0,0,0
-
+shipMissilesPos: 
+    resw SHIP_MISSILE_MAX
+monsterCount: db 0
+monsterPos: 
+    resw MONSTER_MAX
 
 section stack stack
     resb 256
