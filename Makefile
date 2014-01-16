@@ -3,7 +3,7 @@ all: breakout.exe invaders.exe
 tools/BuildSprites.exe: tools/BuildSprites.cs
 	csc -out:$@ $^
 
-inv_sprites.asm: tools/BuildSprites.exe ship.bmp missile.bmp
+inv_sprites.asm: tools/BuildSprites.exe ship.bmp missile.bmp monster1.bmp
 	./tools/BuildSprites.exe $(filter %.bmp, $^) >$@
     
 inv_sprites.obj:inv_sprites.asm
