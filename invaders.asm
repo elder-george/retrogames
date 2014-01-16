@@ -42,14 +42,7 @@ start:
     mov ax, data
     mov ds, ax
     mode13h
-    mov al, 100
-    mov ah, 160
-    mov [monsterPos], ax
-    mov al, 120
-    mov ah, 160
-    mov [monsterPos+2], ax
-    inc byte[monsterCount]
-    inc byte[monsterCount]
+    ccall place_monsters, level0monsters
 
 .loop:
     call swapBuffers
@@ -67,8 +60,50 @@ start:
     mov ax, 4c00h
     int 21h
 
+place_monsters:
+    %stacksize large
+    %arg level:word
+    enter 0,0
+    push es
+    push ds
+    pop es
+    mov di, monsterPos  ; preparing to write
+    mov si, [level]
+    lodsb       ; get number of rows
+    mov cl, al
+    xor bl, bl  ; count
+.rows_loop:
+    cmp cl, 0
+    jle .done
+    dec cl
+    lodsb       ; al = Y
+    xchg al, ah ; ah = Y
+    lodsb       ; al = bitmask
+    mov dl, al
+    ;xor al, al
+    mov al, MARGIN_X
+    mov ch, 8
+.columns_loop:
+    cmp ch, 0
+    jle .rows_loop
+    dec ch
+    add al, 16
+    shr dl, 1
+    jnc .columns_loop
+    stosw
+    inc bl
+    jmp .columns_loop
+.done:
+    mov [monsterCount], bl
+    leave
+    ret
+
 update:
     call update_missiles
+    call update_monsters
+    ret
+
+update_monsters:
     ret
 
 update_missiles:
@@ -214,6 +249,11 @@ handleKeys:
 
 
 section .data
+
+level0monsters:
+    db 2
+    db 20, 01010101b
+    db 40, 10101010b
 
 shipPos:
 shipPos.X: db SCREENW / 2 + 10
