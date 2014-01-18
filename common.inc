@@ -19,6 +19,11 @@ SCREENH     EQU 200
     int 10h
 %endm
 
+%macro mode03h 0
+    mov ax, 03h
+    int 10h
+%endm
+
 %macro coord 2
 %define X %1
 %define Y %2

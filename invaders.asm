@@ -57,6 +57,7 @@ start:
 
     jmp .loop    
 .quit:
+    mode03h
     mov ax, 4c00h
     int 21h
 
@@ -103,6 +104,8 @@ update:
     call update_monsters
     ret
 
+; instead of moving monsters left and down,
+; let's make snake-like movement
 update_monsters:
     ret
 
