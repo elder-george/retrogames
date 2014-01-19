@@ -34,7 +34,10 @@ SHIP_MISSILE_VEL        EQU 2
 SHIP_MISSILE_COOLDOWN   EQU 50
 UFO_MISSILE_MAX         EQU 5
 
-MONSTER_MAX             EQU 20
+MONSTER_H               EQU 16
+MONSTER_W               EQU 16
+MONSTER_ROWS_MAX        EQU 8
+MONSTER_MAX             EQU MONSTER_ROWS_MAX * 8
 
 section .code
 start:
@@ -67,7 +70,7 @@ place_monsters:
     enter 0,0
     push es
     push ds
-    pop es
+    pop es  ; to use stosw instruction we need [es:di} pair correct.
     mov di, monsterPos  ; preparing to write
     mov si, [level]
     lodsb       ; get number of rows
@@ -89,10 +92,16 @@ place_monsters:
     jle .rows_loop
     dec ch
     add al, 16
-    shr dl, 1
-    jnc .columns_loop
+    shr dl, 1       ; is left-most bit set?
+    jnc .no_monster ; if no, store zero (will be ignored)
     stosw
     inc bl
+    jmp .columns_loop
+.no_monster:
+    push ax
+    xor ax,ax
+    stosw
+    pop ax
     jmp .columns_loop
 .done:
     mov [monsterCount], bl
@@ -107,6 +116,68 @@ update:
 ; instead of moving monsters left and down,
 ; let's make snake-like movement
 update_monsters:
+    push ds
+    pop es
+    mov si, monsterPos
+    mov bx, monster_row_direction-1
+    mov cl, MONSTER_ROWS_MAX
+.rows_loop:
+    cmp cl, 0
+    jle .done
+    dec cl
+    inc bx
+    mov ch, 8
+    xor dl, dl              ; should move row down?
+.columns_loop:
+    cmp ch, 0
+    jle .check_if_need_move_row_down
+    dec ch
+    mov di,si
+    lodsw
+    test ax,ax
+    jz .columns_loop
+    test byte[bx], 11111110b  ; is row odd?
+    jz .move_right
+.move_left:
+    dec al
+    cmp al, MARGIN_X
+    jae .update_pos
+    not byte[bx]
+    inc dl
+    jmp .update_pos
+.move_right:
+    inc al
+    cmp al, SCREENW - MARGIN_X - MONSTER_W
+    jbe .update_pos
+    not byte[bx]
+    inc dl    
+.update_pos:
+    mov [di], ax
+    jmp .columns_loop
+.check_if_need_move_row_down:   ; at this point SI points *after* last item
+    test dl, dl                 ; if item in a row hit margin
+    jz .rows_loop
+    push si
+    mov ch, 8                   ; 8 items in a row
+    sub si, 8*2                 ; 8 2-byte words in a row
+.move_row_down_loop:    ; ideally we should have better data structure.
+                        ; but it's easier to just update all items in a row.
+    cmp ch, 0
+    jle .row_moved_down
+    dec ch
+    mov di, si
+    lodsw
+    test ax, ax
+    jz .move_row_down_loop
+    add ah, 8
+    sub al, 4
+    stosw
+    jmp .move_row_down_loop
+.row_moved_down:
+    pop si
+    jmp .rows_loop
+.done:
+    mov al, 1
     ret
 
 update_missiles:
@@ -268,7 +339,9 @@ shipMissilesPos:
     resw SHIP_MISSILE_MAX
 monsterCount: db 0
 monsterPos: 
-    resw MONSTER_MAX
+    resw MONSTER_ROWS_MAX * 8
+monster_row_direction:
+    db 0,1,0,1,0,1,0,1
 
 section stack stack
     resb 256
