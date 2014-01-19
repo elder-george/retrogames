@@ -29,6 +29,8 @@ SHIP_H EQU 32
 SHIP_X_MIN EQU MARGIN_X
 SHIP_X_MAX EQU SCREENW - MARGIN_X - SHIP_W
 
+SHIP_MISSILE_W          EQU 8
+SHIP_MISSILE_H          EQU 16
 SHIP_MISSILE_MAX        EQU 5
 SHIP_MISSILE_VEL        EQU 2
 SHIP_MISSILE_COOLDOWN   EQU 50
@@ -111,6 +113,7 @@ place_monsters:
 update:
     call update_missiles
     call update_monsters
+    call handleCollisions
     ret
 
 ; instead of moving monsters left and down,
@@ -216,6 +219,73 @@ update_missiles:
     dec ch
     mov [shipMissileCooldown], ch
 .done:
+    ret
+
+handleCollisions:
+    mov si, shipMissilesPos
+    mov cl, [shipMissilesCount]
+.missile_loop:
+    cmp cl, 0
+    jle .done
+    mov di, si
+    lodsw
+    test ax,ax
+    jz .missile_loop
+    dec cl
+    mov dx, ax                  ; dx = missile coord
+    push si
+    mov si, monsterPos
+    mov ch, MONSTER_MAX
+.monster_loop:
+    cmp ch, 0
+    jle .all_monsters_checked
+    dec ch
+    lodsw                       ; ax = monster coord
+    test ax,ax
+    jz .monster_loop
+    pusha
+    ccall rectIntersect, ax, word mkword(MONSTER_W, MONSTER_H), dx, mkword(SHIP_MISSILE_W, SHIP_MISSILE_H)
+    test al,al
+    popa
+    jz .monster_loop
+    xor bx,bx
+    mov [si-2], bx  ; destroy monster
+    mov [di], bx    ; destroy missile
+    dec byte[shipMissilesCount]
+    dec byte[monsterCount]
+    jmp .monster_loop
+.all_monsters_checked:
+    pop si
+    jmp .missile_loop
+.done:
+    ret
+
+rectIntersect:
+    %stacksize large
+    %arg xy1:word, wh1:word, xy2:word, wh2:word
+    enter 0,0
+    mov ax, [xy1]
+    mov bx, [wh1]
+    add bl, al      
+    add bh, ah  ; ax = (left1, top1), bx = (right1, bottom1)
+    mov dx, [xy2]   ; dx = (left2, top2)
+    mov cx, [wh2]
+    add cl, dl
+    add ch, dh      ; cx = (right2, bottom2)
+    cmp al, cl      ; if left1 > right2
+    ja .false       
+    cmp dl, bl      ; or left2 > right1
+    ja .false
+    cmp ah, ch      ; or top1 > bottom2
+    ja .false
+    cmp dh, bh      ; or top2 > bottom1
+    ja .false       ; return false
+    mov al, 1
+    jmp .done
+.false:
+    xor al, al
+.done:
+    leave
     ret
 
 render:

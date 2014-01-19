@@ -34,6 +34,10 @@ SCREENH     EQU 200
     add ax, %1
 %endm
 
+%define mkword(lo, hi) word((lo) | ((hi) * 256))
+
+
+
 KEY_LEFT    EQU 75
 KEY_RIGHT   EQU 77
 KEY_UP      EQU 72
