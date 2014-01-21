@@ -14,7 +14,7 @@ inv_sprites.asm: tools/BuildSprites.exe ship.bmp missile.bmp monster1.bmp
     
 inv_sprites.obj:inv_sprites.asm
 
-invaders.exe: invaders.obj vga.obj font.obj kb.obj inv_sprites.obj
+invaders.exe: invaders.obj vga.obj font.obj kb.obj sb.obj inv_sprites.obj explosion.obj
 	alink -oEXE -entry start $^
 
 breakout.exe: breakout.obj vga.obj font.obj kb.obj

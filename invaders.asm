@@ -21,6 +21,14 @@ extern shipSprite
 extern missileSprite
 extern monster1Sprite
 
+; in sb.asm
+extern sb_init
+extern sb_close
+extern play_dma
+
+; in explosion.asm
+extern explosion_wav
+
 %include 'common.inc'
 
 MARGIN_X EQU 64
@@ -46,6 +54,7 @@ start:
     cld
     mov ax, data
     mov ds, ax
+    call sb_init
     mode13h
     ccall place_monsters, level0monsters
 
@@ -62,6 +71,7 @@ start:
 
     jmp .loop    
 .quit:
+    call sb_close
     mode03h
     mov ax, 4c00h
     int 21h
@@ -253,7 +263,12 @@ handleCollisions:
     mov [di], bx    ; destroy missile
     dec byte[shipMissilesCount]
     dec byte[monsterCount]
-    jmp .monster_loop
+    mov bx, explosion_wav
+    mov ax, [bx]
+    inc bx
+    inc bx
+    ccall play_dma, bx, ax
+    ;jmp .monster_loop
 .all_monsters_checked:
     pop si
     jmp .missile_loop
