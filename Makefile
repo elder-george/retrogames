@@ -3,6 +3,12 @@ all: breakout.exe invaders.exe
 tools/BuildSprites.exe: tools/BuildSprites.cs
 	csc -out:$@ $^
 
+powerup.asm: powerup.wav
+	./tools/wav2asm.exe $^ >$@
+
+explosion.asm: explosion.wav
+	./tools/wav2asm.exe $^ >$@
+
 inv_sprites.asm: tools/BuildSprites.exe ship.bmp missile.bmp monster1.bmp
 	./tools/BuildSprites.exe $(filter %.bmp, $^) >$@
     
