@@ -25,15 +25,18 @@ class SpriteBuilder{
                 Console.WriteLine("db {0}, {1}", width / 8, height);
                 for (var i = 0; i < height; i++)
                 {
-                    Console.Write(width % 32 == 0 
-                                    ? "dd " 
-                                    : width % 16 == 0 
-                                        ? "dw " : "db ");
-                    for (var j = 0; j < width; j++){
-                        var pixel = img.GetPixel(j, i);
-                        Console.Write(pixel.R == 0 ? 1: 0);
-                        if (j != 0 && (j % 32 == 31 || j == width - 1))
-                            Console.Write("b ");
+                    Console.Write("db ");
+                    for (var j = 0; j < width/8; j++)
+                    {
+                        for (var k = 0; k < 8; k++){
+                            var pixel = img.GetPixel(j*8+k, i);
+                            Console.Write(pixel.R == 0 ? 1: 0);
+                            if (k == 7)
+                                Console.Write("b");
+                        }
+                        if (j != width/8-1){
+                            Console.Write(", ");
+                        }
                     }            
                     Console.WriteLine();
                 }

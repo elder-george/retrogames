@@ -136,7 +136,7 @@ drawMaskBin:
     mov cl, 8           ; bit number in a byte
     lodsb               
 .next_point:
-    shr al, 1           ; shift a bit out of byte
+    shl al, 1           ; shift a bit out of byte
     jnc .skip_point     ; if it's 0, skip the point
     mov [es:di], ah
 .skip_point:
