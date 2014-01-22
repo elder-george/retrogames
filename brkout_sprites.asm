@@ -1,3 +1,10 @@
+global ballBin
+global paddleBin
+global borderVert
+global brick
+
+section .data
+
 ; sprites
 ballBin:
     db 1,8

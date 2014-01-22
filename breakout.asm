@@ -17,6 +17,12 @@ extern getKey
 ; in font.asm
 extern digits
 
+; in brkout_sprites.asm
+extern brick
+extern paddleBin
+extern ballBin
+extern borderVert
+
 ; in sb.asm
 extern sb_init
 extern sb_close
@@ -414,8 +420,6 @@ score:
 
 score_buf:
     db '0','0','0',00,0,0,0,0,0,0
-
-%include 'sprites.inc'
 
 levels:
     dw level0, level1
