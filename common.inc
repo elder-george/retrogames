@@ -19,6 +19,11 @@ SCREENH     EQU 200
     int 10h
 %endm
 
+%macro mode03h 0
+    mov ax, 03h
+    int 10h
+%endm
+
 %macro coord 2
 %define X %1
 %define Y %2
@@ -28,4 +33,19 @@ SCREENH     EQU 200
     shl ax, 6
     add ax, %1
 %endm
+
+%define mkword(lo, hi) word((lo) | ((hi) * 256))
+
+
+
+KEY_LEFT    EQU 75
+KEY_RIGHT   EQU 77
+KEY_UP      EQU 72
+KEY_DOWN    EQU 80
+
+KEY_ESC     EQU 1
+KEY_SPACE   EQU 57
+KEY_ENTER   EQU 28
+KEY_NUM_MIN EQU 2
+KEY_NUM_MAX EQU 11
 

@@ -153,6 +153,11 @@ drawMaskBin:
     test dh, dh         ; is last row?
     jz .drawMask_end    ; if yes, end
     pop ax              ; restore the old pointer
+    cmp ax, SCREENW * (SCREENH-1)
+    jnae .inc_ptr
+    push ax
+    jmp .drawMask_end
+.inc_ptr:
     add ax, SCREENW     ; advance to the next line
     push ax             ; save for next iteration
     jmp .drawMask_line

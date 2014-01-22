@@ -17,19 +17,16 @@ extern getKey
 ; in font.asm
 extern digits
 
+; in sb.asm
+extern sb_init
+extern sb_close
+extern play_dma
+
+; in powerup.asm
+extern powerup_wav
+
 
 %include 'common.inc'
-
-KEY_LEFT    EQU 75
-KEY_RIGHT   EQU 77
-KEY_UP      EQU 72
-KEY_DOWN    EQU 80
-
-KEY_ESC     EQU 1
-KEY_SPACE   EQU 57
-KEY_ENTER   EQU 28
-KEY_NUM_MIN EQU 2
-KEY_NUM_MAX EQU 11
 
 MARGIN_X    EQU 80
 MARGIN_TOP  EQU 10
@@ -58,9 +55,12 @@ start:
     cld
     mov ax, data
     mov ds, ax
+    call sb_init
     call load_level
     mode13h
     call .loop
+    call sb_close
+    mode03h
     mov ax, 4c00h
     int 21h
 
@@ -294,6 +294,11 @@ moveBall:
     jne .decide_what_side_collided
     inc word[score]
     dec byte[level_brick_count]
+    mov bx, powerup_wav
+    mov ax, [bx]
+    inc bx
+    inc bx
+    ccall play_dma, bx, ax
 .decide_what_side_collided:
     mov ax, [newY]
     add ax, 4       ; center of ball
