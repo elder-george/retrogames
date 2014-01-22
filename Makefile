@@ -1,7 +1,10 @@
 all: breakout.exe invaders.exe
 
 tools/BuildSprites.exe: tools/BuildSprites.cs
-	csc -out:$@ $^
+	csc -out:$@ $(subst /,\\,$^)
+
+tools/wav2asm.exe: tools/wav2asm.cs
+    csc -out:$@ $(subst /,\\,$^)
 
 powerup.asm: powerup.wav
 	./tools/wav2asm.exe $^ >$@
