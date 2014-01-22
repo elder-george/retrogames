@@ -360,7 +360,7 @@ handleKeys:
     mov ch, [shipMissilesCount]
     mov cl, SHIP_MISSILE_MAX
     cmp ch, cl    
-    jae .done
+    jge .done
     mov ah, SHIP_MISSILE_COOLDOWN
     mov [shipMissileCooldown], ah
     mov si, shipMissilesPos
