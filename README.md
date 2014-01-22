@@ -11,6 +11,10 @@ Bounce ball with paddle, hit bricks. Destroy all the bricks to go to the next le
 Right now there're only two levels (it's trivial to add more though) 
 and collision detection (critical for this kind of games) sucks. Sigh...
 
+Invaders
+--------
+
+You need to shoot invading alien monsters before they reach you.
 
 Building
 --------
