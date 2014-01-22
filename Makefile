@@ -6,16 +6,16 @@ tools/BuildSprites.exe: tools/BuildSprites.cs
 tools/wav2asm.exe: tools/wav2asm.cs
     csc -out:$@ $(subst /,\\,$^)
 
-powerup.asm: powerup.wav
-	./tools/wav2asm.exe $^ >$@
+powerup.asm: tools/wav2asm.exe assets/powerup.wav
+	./tools/wav2asm.exe $(filter %.wav,$^) >$@
 
-explosion.asm: explosion.wav
-	./tools/wav2asm.exe $^ >$@
+explosion.asm: tools/wav2asm.exe assets/explosion.wav
+	./tools/wav2asm.exe $(filter %.wav,$^) >$@
 
-brkout_sprites.asm: tools/BuildSprites.exe ball.bmp paddle.bmp border.bmp brick.bmp
+brkout_sprites.asm: tools/BuildSprites.exe assets/ball.bmp assets/paddle.bmp assets/border.bmp assets/brick.bmp
 	./tools/BuildSprites.exe $(filter %.bmp, $^) >$@
 
-inv_sprites.asm: tools/BuildSprites.exe ship.bmp missile.bmp monster1.bmp
+inv_sprites.asm: tools/BuildSprites.exe assets/ship.bmp assets/missile.bmp assets/monster1.bmp
 	./tools/BuildSprites.exe $(filter %.bmp, $^) >$@
     
 inv_sprites.obj:inv_sprites.asm

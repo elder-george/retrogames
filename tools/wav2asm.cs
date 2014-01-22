@@ -19,9 +19,10 @@ class Wav2Asm{
                 }
             }
             if (start > 0 && length > 0){
-                Console.WriteLine("global " + args[0].Replace(".", "_"));
+                var symbolName = Path.GetFileNameWithoutExtension(args[0])+"_wav";
+                Console.WriteLine("global " + symbolName);
                 Console.WriteLine("section .data");
-                Console.WriteLine(args[0].Replace(".", "_")+":");
+                Console.WriteLine(symbolName+":");
                 Console.WriteLine("dw {0}", length);
                 for (var i = 0; i < length / 24; i++){
                     if (length - i * 24 > 0){
