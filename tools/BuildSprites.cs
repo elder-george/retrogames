@@ -25,7 +25,7 @@ class SpriteBuilder{
                 Console.WriteLine("db {0}, {1}", width / 8, height);
                 for (var i = 0; i < height; i++)
                 {
-                    Console.Write("db ");
+                    Console.Write("    db ");
                     for (var j = 0; j < width/8; j++)
                     {
                         for (var k = 0; k < 8; k++){

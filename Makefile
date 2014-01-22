@@ -12,6 +12,9 @@ powerup.asm: powerup.wav
 explosion.asm: explosion.wav
 	./tools/wav2asm.exe $^ >$@
 
+brkout_sprites.asm: tools/BuildSprites.exe ball.bmp paddle.bmp border.bmp brick.bmp
+	./tools/BuildSprites.exe $(filter %.bmp, $^) >$@
+
 inv_sprites.asm: tools/BuildSprites.exe ship.bmp missile.bmp monster1.bmp
 	./tools/BuildSprites.exe $(filter %.bmp, $^) >$@
     

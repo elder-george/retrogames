@@ -18,10 +18,10 @@ extern getKey
 extern digits
 
 ; in brkout_sprites.asm
-extern brick
-extern paddleBin
-extern ballBin
-extern borderVert
+extern brickSprite
+extern paddleSprite
+extern ballSprite
+extern borderSprite
 
 ; in sb.asm
 extern sb_init
@@ -87,8 +87,8 @@ start:
     cmp al, 0
     jle .next_level
     xor ah, ah
-    ccall drawMaskBin,5, paddleBin, word[paddleCoords.X], word[paddleCoords.Y]
-    ccall drawMaskBin,5, ballBin,   word[ballCoords.X], word[ballCoords.Y]
+    ccall drawMaskBin,5, paddleSprite, word[paddleCoords.X], word[paddleCoords.Y]
+    ccall drawMaskBin,5, ballSprite,   word[ballCoords.X], word[ballCoords.Y]
     call moveBall
     call handleKeys
     test al, al
@@ -149,7 +149,7 @@ drawBlocks:
     push si
     push cx
     push bx
-    ccall drawMaskBin, 5, brick, bx, dx
+    ccall drawMaskBin, 5, brickSprite, bx, dx
     pop bx
     pop cx
     pop si
@@ -171,10 +171,10 @@ drawBorder:
     xor ax,ax
 .y_loop:
     push ax
-    ccall drawMaskBin, 50, borderVert, (MARGIN_X - 8), ax
+    ccall drawMaskBin, 50, borderSprite, (MARGIN_X - 8), ax
     pop ax
     push ax
-    ccall drawMaskBin, 50, borderVert, (SCREENW - MARGIN_X), ax
+    ccall drawMaskBin, 50, borderSprite, (SCREENW - MARGIN_X), ax
     pop ax
     add ax, 8
     cmp ax, SCREENH - 8
@@ -183,7 +183,7 @@ drawBorder:
     mov ax, (MARGIN_X - 8)
 .x_loop:
     push ax
-    ccall drawMaskBin, 50, borderVert, ax, 0
+    ccall drawMaskBin, 50, borderSprite, ax, 0
     pop ax
     add ax, 8
     cmp ax, SCREENW - MARGIN_X - 8
