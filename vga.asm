@@ -111,6 +111,14 @@ drawChar:
     %arg COLOR:word, pchar:word, X:word, Y:word
     push bp
     mov bp, sp
+    ; preserving registers
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+    push di
+
     mov dh, 8
     mov dl, 1
     mov si, [pchar]
@@ -122,11 +130,20 @@ drawMaskBin:
 
     push bp
     mov bp, sp
+    ; preserving registers
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+    push di
+
     mov si, [pmask]
     mov dx, [si]        ; W, H
-    add si, 2           ; si = mask_data
+    inc si
+    inc si              ; si = mask_data
 .compute_LT_coord:
-    coord [X],[Y]
+    coord [X], [Y]
     push ax             ; store for reuse
 .drawMask_line:
     mov ch, dl          ; byte number in a row
@@ -162,7 +179,16 @@ drawMaskBin:
     push ax             ; save for next iteration
     jmp .drawMask_line
 .drawMask_end:
+	pop ax
+
+	; restoring registers
+	pop di
+	pop si
+    pop dx
+    pop cx
+    pop bx
     pop ax
+
     mov sp, bp
     pop bp
     ret
@@ -188,8 +214,8 @@ clearBuffer:
     mov es, ax
     xor ax,ax
     mov di, ax
-    mov cx, SCREENW*SCREENH/4
-    rep stosd
+    mov cx, SCREENW*SCREENH/2
+    rep stosw
     ret
 
 section VBUF
