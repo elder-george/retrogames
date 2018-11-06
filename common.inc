@@ -31,7 +31,7 @@ SCREENH     EQU 200
     shl ax, 2           ; 320 = 256 + 64 = (4 + 1) * 64
     add ax, Y
     shl ax, 6
-    add ax, %1
+    add ax, X           ; ax = Y*320 + X
 %endm
 
 %define mkword(lo, hi) word((lo) | ((hi) * 256))
