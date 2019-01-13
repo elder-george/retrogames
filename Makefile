@@ -3,7 +3,7 @@
 # for UNIX-style shell, comment the line above and uncomment the line below - it may work!
 #/:=/
 
-all: breakout.exe invaders.exe
+all: breakout.exe invaders.exe tetris.exe
 
 tools$/wav2asm.exe: tools$/wav2asm.cs
 	csc -nologo -out:$@ $^
@@ -29,6 +29,12 @@ invaders.exe: invaders.obj vga.obj font.obj kb.obj sb.obj inv_sprites.obj explos
 	alink -oEXE -entry start $^  >nul
 
 breakout.exe: breakout.obj vga.obj font.obj kb.obj sb.obj brkout_sprites.obj powerup.obj 
+	alink -oEXE -entry start $^ >nul
+
+tet_sprites.asm: tools$/BuildSprites.exe assets/border.bmp assets/ball.bmp
+	.$/tools$/BuildSprites.exe $(filter %.bmp, $^) >$@
+
+tetris.exe: tetris.obj vga.obj font.obj kb.obj tet_sprites.obj
 	alink -oEXE -entry start $^ >nul
 
 %.obj: %.asm
