@@ -1,11 +1,17 @@
 global checkKey
 global getKey
 global clearKey
+global waitKey
 
 section .code
 
 checkKey:
     mov ah, 1
+    int 16h
+    ret
+
+waitKey:
+    mov al, 0
     int 16h
     ret
 
