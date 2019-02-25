@@ -29,14 +29,13 @@ start:
     cmd.atk_dcy(CARRIER_CELL, arg.atk_dcy(0fh, 0fh))
     ;high sustain level (D7-D4=0), slow release rate (D3-D0=5) 
     cmd.sustain_release(CARRIER_CELL, arg.sustain_release(0, 5))
-    ;cmd.sustain_release(CARRIER_CELL, 05h)
-    ;
+
     ; * Set parameters for the modulator cell *
     %define MODULATOR_CELL select_cell(1,1)
 
     cmd.main(MODULATOR_CELL, arg.main(0, 0, 1, 0))
     cmd.level(MODULATOR_CELL, arg.level(3, 0fh))
-    cmd.atk_dcy(MODULATOR_CELL, arg.atk_dcy(4, 4)) ; scale is 0..0fh
+    cmd.atk_dcy(MODULATOR_CELL, arg.atk_dcy(4, 4))
     cmd.sustain_release(MODULATOR_CELL, arg.sustain_release(0,5)) 
     ;* Generate tone from values looked up in table. *
     cmd.tone(CHANNEL.1, TONE.A, OCTAVE.DEFAULT)
@@ -45,9 +44,8 @@ start:
     test al, al
     je .wait_key
 
-	;fm(0xb0,0x12);  /* key off */
-    cmd.key_off(CHANNEL.1) ; note that in original it's ("key off" | 2) - ??? 
-
+	; * key off
+    cmd.key_off(CHANNEL.1)
 
     mov ax, 4c00h
     int 21h
