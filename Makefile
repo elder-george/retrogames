@@ -31,6 +31,9 @@ invaders.exe: invaders.obj vga.obj font.obj kb.obj sb.obj inv_sprites.obj explos
 breakout.exe: breakout.obj vga.obj font.obj kb.obj sb.obj brkout_sprites.obj powerup.obj 
 	alink -oEXE -entry start $^ >nul
 
+fm_demo.exe: fm_demo.obj kb.obj fm.asm
+	alink -oEXE -entry start $(filter %.obj, $^) >nul
+
 %.obj: %.asm
 	nasm -f obj $^
 
