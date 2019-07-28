@@ -45,10 +45,10 @@ start:
     jmp .wait_key
 
 .play_from_data:
-    push 0
+    ;push 0
     push track.1
     call play_track
-    sub sp, 4
+    sub sp, 2
 .wait_key:
     call waitKey
     test al, al
@@ -59,30 +59,48 @@ start:
     mov ax, 4c00h
     int 21h
 
+%macro do_cmd 1
+    mov bl, ADDR.BASE.%1
+    call play_track.do_cmd_impl
+%endm
+
+
 play_track:
     .TRACK_START equ 4
+    .MOVE_TO_NEXT equ -2
     push bp
     mov bp, sp
+    add sp, 2
     mov si, [bp + .TRACK_START]
-    cld
-.play_tone:
-%macro do_cmd 1
-    mov bl, bh
-    or bl, ADDR.BASE.%1
-    lodsb
-    ; write_reg uses `al` to pass register "address" to the FM chip
-    ; so, passing address through `al` is safe, passing data isn't
-    xchg bl, al
-    write_reg al, bl
-%endm
+    mov di, si
+.header:
     xor bx, bx
-    lodsb
-    mov bh, al   ; channel #
-    push bx      ; backup
-    lodsb        ; counter - skip for now
-    lodsb        ; current tone number - skip for now
+    mov bh, [si + TRACK_HDR.channel]
+    push bx      ; backup 
+    xor dx, dx
+    mov cl, [si+TRACK_HDR.tone_no]
+    mov ch, [si+TRACK_HDR.counter]
+    cmp ch, 0
+    jge .continue_current
+.move_to_next:
+    inc cl
+    mov [si+TRACK_HDR.tone_no], cl
+    mov [bp+.MOVE_TO_NEXT], cl
+.continue_current:
+    mov al, TONE_size      ; skip first N tones...
+    mov ah, cl
+    mul ah
+    add ax, TRACK_HDR_size ; ...in addition to header
+    add si, ax             ; si -> tone data
+    cld
+.track:
     lodsb        ; tone's length - skip for now
-    ;test al, al
+    mov ah, [bp+.MOVE_TO_NEXT]
+    test ah, ah
+    jz .play
+.reset_counter:
+    mov [di+TRACK_HDR.counter], al
+.play:
     do_cmd FDBK_CONN_TYPE
     ; CARRIER CELL
     or bh, OP_OFFSET.2
@@ -109,6 +127,19 @@ play_track:
     pop bp
     ret
 
+; expects:
+; - SI to point at the FM command list
+; - BH to have cell #
+; - BL to have register address
+.do_cmd_impl:
+    or bl, bh
+    lodsb
+    ; write_reg uses `al` to pass register "address" to the FM chip
+    ; so, passing address through `al` is safe, passing data isn't
+    xchg bl, al
+    write_reg al, bl
+    ret
+    
 section data
 
 struc CELL_CFG
@@ -126,10 +157,18 @@ struc TONE
     .tone_oct    resw 1
 endstruc
 
+struc TRACK_HDR
+    .channel resb 1
+    .counter resb 1
+    .tone_no resb 1
+endstruc
+
 track.1:
-    .channel db CHANNEL.1
-    .counter db 07fh    ; initial value - max<int8>
-    .tone_no db 0
+istruc TRACK_HDR
+    at TRACK_HDR.channel, db CHANNEL.1
+    at TRACK_HDR.counter, db 07fh    ; initial value - max<int8>
+    at TRACK_HDR.tone_no, db 0
+iend
 .tones:
     istruc TONE
         at TONE.len,            db 16
