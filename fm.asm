@@ -88,7 +88,7 @@ global fm_play
 %define cmd.timer_disable(timer.1, timer.2) write_reg ADDR.TIMER_CTL, \
 	field(~timer.1, 1, 6)|field(~timer.2, 1, 5)| 00b
 %define cmd.timer.load(timer.1, timer.2) write_reg ADDR.TIMER_CTL, \
-	field(~timer.1, 1, 6)|field(~timer.2, 5) | 11b
+	field(~timer.1, 1, 6)|field(~timer.2, 1, 5) | 11b
 
 ; Don't want to implement ADDR.SPEECH_KEYB
 
