@@ -31,10 +31,10 @@ invaders.exe: invaders.obj vga.obj font.obj kb.obj sb.obj inv_sprites.obj explos
 breakout.exe: breakout.obj vga.obj font.obj kb.obj sb.obj brkout_sprites.obj powerup.obj 
 	alink -oEXE -entry start $^ >nul
 
-fm_demo.exe: fm_demo.obj kb.obj fm.asm
+fm_demo.exe: fm_demo.obj kb.obj io.obj timer.obj fm.asm
 	alink -oEXE -entry start $(filter %.obj, $^) >nul
 
-timer_demo.exe: timer_demo.obj kb.obj timer.obj io.obj timer.inc
+timer_demo.exe: timer_demo.obj kb.obj timer.obj timer.inc
 	alink -oEXE -entry start $(filter %.obj, $^)
 
 %.obj: %.asm

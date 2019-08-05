@@ -3,6 +3,7 @@ global start
 
 %include 'common.inc'
 %include 'fm.asm'
+%include 'timer.inc'
 
 ; in kb.asm
 extern getKey
@@ -18,7 +19,7 @@ start:
 	; - in `fm.asm` the corresponding "API" is `write_reg`.
     cmd.enable_waveform(0)
 
-    jmp near .play_from_data
+    jmp near .play_with_timer
     cmd.feedback(CHANNEL.1, arg.feedback(0, 1))    ; paralel connection
     ; * Set parameters for the carrier cell *
     %define CARRIER_CELL  select_cell(1, 2)
@@ -42,10 +43,16 @@ start:
     cmd.sustain_release(MODULATOR_CELL, arg.sustain_release(0,5)) 
     ;* Generate tone from values looked up in table. *
     cmd.tone(CHANNEL.1, TONE.A, OCTAVE.DEFAULT)
+
+    jmp .wait_key
+.play_with_timer:
+    push handler_desc
+    call timer.add_handler
+    add sp, 2
+    call fm.timer2.enable
     jmp .wait_key
 
 .play_from_data:
-    ;push 0
     push track.1
     call play_track
     sub sp, 2
@@ -55,51 +62,87 @@ start:
     je .wait_key
 	; * key off
     cmd.key_off(CHANNEL.1)
+    call fm.timer2.disable
+    push handler_desc
+    call timer.remove_handler
+    add sp, 2
 .exit:
     mov ax, 4c00h
     int 21h
+
+handler_impl:
+    read_status
+    test al, 10100000b
+    jz .done
+    push track.1
+    call update_track
+    call play_track
+    add sp, 2
+    call fm.timer2.enable
+.done:
+    ret
+
+make_timer_handler handler_desc, handler_impl
 
 %macro do_cmd 1
     mov bl, ADDR.BASE.%1
     call play_track.do_cmd_impl
 %endm
 
+update_track:
+    .TRACK_START equ 4
+    push bp
+    mov bp, sp
+    mov si, [bp+.TRACK_START]
+    ; on each timer tick, decrease the counter
+    mov cl, [si+TRACK_HDR.counter]
+    dec cl
+    cmp cl, 0
+    ; if counter is over, move to next
+    jle .move_to_next
+    ; else write back the new value until next execution
+    mov [si+TRACK_HDR.counter], cl
+    jmp .exit
+.move_to_next:
+    mov di, si ; we'll be moving SI, but DI will stay in place pointing at the header
+    ; tone_no += 1
+    mov ch, [si+TRACK_HDR.tone_no]
+    inc ch
+    mov [si+TRACK_HDR.tone_no], ch
+    mov al, TONE_size
+    mul ch
+    add ax, TRACK_HDR_size
+    ; SI += sizeof(TRACK_HDR)+(tone_no)*sizeof(TONE)
+    add si, ax
+    mov cl, [si+TONE.len]
+    mov [di+TRACK_HDR.counter], cl
+    cmd.key_off(CHANNEL.1)
+.exit:
+    mov sp, bp
+    pop bp
+    ret
 
 play_track:
     .TRACK_START equ 4
-    .MOVE_TO_NEXT equ -2
     push bp
     mov bp, sp
-    add sp, 2
     mov si, [bp + .TRACK_START]
-    mov di, si
+    mov di, si ; we'll be moving SI, but DI will stay in place pointing at the header
 .header:
     xor bx, bx
     mov bh, [si + TRACK_HDR.channel]
     push bx      ; backup 
     xor dx, dx
     mov cl, [si+TRACK_HDR.tone_no]
-    mov ch, [si+TRACK_HDR.counter]
-    cmp ch, 0
-    jge .continue_current
-.move_to_next:
-    inc cl
-    mov [si+TRACK_HDR.tone_no], cl
-    mov [bp+.MOVE_TO_NEXT], cl
-.continue_current:
     mov al, TONE_size      ; skip first N tones...
-    mov ah, cl
-    mul ah
+    mul cl
     add ax, TRACK_HDR_size ; ...in addition to header
     add si, ax             ; si -> tone data
     cld
 .track:
     lodsb        ; tone's length - skip for now
-    mov ah, [bp+.MOVE_TO_NEXT]
-    test ah, ah
-    jz .play
-.reset_counter:
-    mov [di+TRACK_HDR.counter], al
+    cmp al, [di+TRACK_HDR.counter]
+    je .exit
 .play:
     do_cmd FDBK_CONN_TYPE
     ; CARRIER CELL
@@ -150,29 +193,6 @@ fm.timer2.disable:
     cmd.timer_disable(1, 1)
     ret
 
-; IN: NULL-terminated array of TRACKS
-fm.timer_handler:
-    %define .TRACKS equ 4
-    push bp
-    mov bp, sp
-    ; check if this is a FM-device timer:
-    read_status
-    test al, 10100000b
-    jz .exit ; not something else?
-    ; update the tracks state
-    mov si, [bp+TRACKS]
-.foreach_track:
-    lodsw
-    test ax, ax
-    jz .exit
-    push ax
-    call play_tone
-    jmp .foreach_track
-.exit:
-    mov sp, bp
-    pop bp
-    ret
-    
 section data
 
 struc CELL_CFG
@@ -199,15 +219,15 @@ endstruc
 track.1:
 istruc TRACK_HDR
     at TRACK_HDR.channel, db CHANNEL.1
-    at TRACK_HDR.counter, db 07fh    ; initial value - max<int8>
-    at TRACK_HDR.tone_no, db 0
+    at TRACK_HDR.counter, db 0    ; initial value - max<int8>
+    at TRACK_HDR.tone_no, db -1
 iend
 .tones:
     istruc TONE
         at TONE.len,            db 16
         at TONE.feedback,       db arg.feedback(0, 1)
-        at TONE.carrier_cfg,    db (arg.main(0, 0, 1, 0) | 1), arg.level(0, 0), arg.atk_dcy(0fh, 0fh), arg.sustain_release(0, 5)
-        at TONE.mod_cfg,        db arg.main(0, 0, 1, 0), arg.level(3, 0fh), arg.atk_dcy(04h, 04h), arg.sustain_release(0,5)
+        at TONE.carrier_cfg,    db (arg.main(0, 0, 1, 0) | 1), arg.level(0, 0), arg.atk_dcy(03h, 01h), arg.sustain_release(3, 1)
+        at TONE.mod_cfg,        db arg.main(0, 0, 1, 0), arg.level(3, 0fh), arg.atk_dcy(04h, 01h), arg.sustain_release(0,5)
         at TONE.tone_oct,       dw make_tone_octave(TONE.A, OCTAVE.DEFAULT)
     iend
 
@@ -218,3 +238,5 @@ iend
         at TONE.mod_cfg,        db arg.main(0, 0, 1, 0), arg.level(3, 0fh), arg.atk_dcy(04h, 04h), arg.sustain_release(0,5)
         at TONE.tone_oct,       dw make_tone_octave(TONE.D, OCTAVE.DEFAULT)
     iend
+; terminating record
+    dw 0
