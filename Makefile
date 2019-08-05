@@ -34,6 +34,8 @@ breakout.exe: breakout.obj vga.obj font.obj kb.obj sb.obj brkout_sprites.obj pow
 fm_demo.exe: fm_demo.obj kb.obj fm.asm
 	alink -oEXE -entry start $(filter %.obj, $^) >nul
 
+timer_demo.exe: timer_demo.obj kb.obj timer.obj io.obj timer.inc
+	alink -oEXE -entry start $(filter %.obj, $^)
+
 %.obj: %.asm
 	nasm -f obj $^
-
