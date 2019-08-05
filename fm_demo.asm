@@ -139,6 +139,39 @@ play_track:
     xchg bl, al
     write_reg al, bl
     ret
+
+fm.timer2.enable:
+    cmd.timer_reset_all
+    cmd.timer.load(0, 1)
+    cmd.timer.2(195)
+    ret
+
+fm.timer2.disable:
+    cmd.timer_disable(1, 1)
+    ret
+
+; IN: NULL-terminated array of TRACKS
+fm.timer_handler:
+    %define .TRACKS equ 4
+    push bp
+    mov bp, sp
+    ; check if this is a FM-device timer:
+    read_status
+    test al, 10100000b
+    jz .exit ; not something else?
+    ; update the tracks state
+    mov si, [bp+TRACKS]
+.foreach_track:
+    lodsw
+    test ax, ax
+    jz .exit
+    push ax
+    call play_tone
+    jmp .foreach_track
+.exit:
+    mov sp, bp
+    pop bp
+    ret
     
 section data
 
