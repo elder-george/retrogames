@@ -19,7 +19,7 @@ You need to shoot invading alien monsters before they reach you.
 Building
 --------
 
-You'll need [`nasm`](http://www.nasm.us) and [`alink`](alink.sourceforge.net) 
+You'll need [`nasm`](http://www.nasm.us) and [`alink`](http://alink.sourceforge.net/) 
 (or another linker capable of linking 16-bit `.obj` files).
 
 Add them to your `PATH`, then run `make`.
