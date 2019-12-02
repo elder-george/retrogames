@@ -88,7 +88,7 @@ global fm_play
 %define cmd.timer_disable(timer.1, timer.2) write_reg ADDR.TIMER_CTL, \
 	field(~timer.1, 1, 6)|field(~timer.2, 1, 5)| 00b
 %define cmd.timer.load(timer.1, timer.2) write_reg ADDR.TIMER_CTL, \
-	field(~timer.1, 1, 6)|field(~timer.2, 5) | 11b
+	field(~timer.1, 1, 6)|field(~timer.2, 1, 5) | 11b
 
 ; Don't want to implement ADDR.SPEECH_KEYB
 
@@ -127,8 +127,9 @@ global fm_play
 %define cmd.enable_waveform(wf)\
     write_reg ADDR.TEST_ENABLE, field(wf, 1b, 5)
 
-%define cmd.feedback(channel, strength, alg)\
-    write_reg ADDR.BASE.FDBK_CONN_TYPE|channel, field(strength, 111b, 1)|field(alg, 1, 0)
+%define arg.feedback(strength, alg)     field(strength, 111b, 1)|field(alg, 1, 0)
+%define cmd.feedback(channel, arg)\
+    write_reg ADDR.BASE.FDBK_CONN_TYPE|channel, arg
 
 %define arg.main(use_amp, use_vib, no_decay, harmonic) \
 	field(use_amp, 1, 7)|field(use_vib,1b,6)|field(no_decay,1b,5) | field(harmonic,01111b, 0)
@@ -150,8 +151,12 @@ global fm_play
 %define octave  %3
     write_reg select_reg(FREQ, channel), (tone&0ffh)
     write_reg select_reg(KEY_OCTAVE_FREQ, channel), arg.tone2(tone, octave)
-        
 %endmacro
+
+; Opposite operation: build a word describing octave & tone in a format that can be written to the regs
+%define make_tone_octave(tone, octave) ((arg.tone2(tone,octave)<<8) | (tone & 0ffh))
+
+
 %define cmd.tone(cell, tone, octave) cmd_tone cell, tone, octave
 %define cmd.key_off(cell) write_reg select_reg(KEY_OCTAVE_FREQ, cell), field(0,1,5)
 
